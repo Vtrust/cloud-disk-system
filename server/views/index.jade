@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1 文件上传Demo
+  p TODO 批量上传，分片上传，断点续传，秒传
+  .main
+    #sidebar
+    .content
+      div
+        input#c-file(type="file" multiple="multiple" style="display:none")
+        a#upload-target.x-button 选择文件并上传
+        #upload-view
+        #log
+  script(src='/javascripts/spark-md5.js')
+  script(src='/javascripts/index.js')

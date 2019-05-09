@@ -34,7 +34,7 @@ a {
 }
 .u-progress{
   box-sizing: border-box;
-  width: 50%;
+  width: 40%;
 }
 .u-state{
   height: 10px;
@@ -50,6 +50,10 @@ a {
   box-sizing: border-box;
   width: 10%;
   text-align: center;
+}
+.u-cancel{
+  width: 10%;
+  cursor: pointer;
 }
 #log{
   font-size: 10px;

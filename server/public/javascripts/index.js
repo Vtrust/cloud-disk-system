@@ -7,15 +7,18 @@ document.getElementById('upload-target').onclick = function() {
   choosefile.click();
 }
 
-let chunkSize = 8 * 1024 * 1024; //2MB
+let chunkSize = 2 * 1024 * 1024; //2MB
 let spark = new SparkMD5.ArrayBuffer();
 let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice; //文件分割
 
 choosefile.onchange = e => {
+  log('选择文件')
   let files = e.target.files;
   for (let i = 0; i < files.length; i++) {
     html5_upload(files[i]);
   }
+  log('清空input value');
+  choosefile.value = '';
 }
 
 let uploadView = document.getElementById('upload-view');
@@ -24,7 +27,7 @@ function addTaskToView(name, size) {
   let fsize = formatSize(size);
   let task = document.createElement("div");
   task.classList.add('task');
-  task.innerHTML = `<div class="filename">${name}</div><div class="filesize">${fsize}</div><div class="u-progress"><div class="u-state"><div class="u-now"></div></div></div><div class="u-num">0.0%</div>`
+  task.innerHTML = `<div class="filename">${name}</div><div class="filesize">${fsize}</div><div class="u-progress"><div class="u-state"><div class="u-now"></div></div></div><div class="u-num">0.0%</div><div class="u-cancel">传输中</div>`
   uploadView.appendChild(task);
 }
 
@@ -34,21 +37,23 @@ function html5_upload(file) {
   let thisNum = uploadNum++;
   addTaskToView(file.name, file.size);
   log(file.name + " 添加上传任务");
-  log(file.name + " 随机id用于文件合并");
-  let fid = Date.now();
-  log(file.name + " 开始分块上传 "+ new Date().toLocaleTimeString());
+  //log(file.name + " 随机id用于文件合并");
+  // let fid = Date.now();
+  // log(file.name + " 开始分块上传 "+ new Date().toLocaleTimeString());
   let unow = {
     dom1:document.getElementsByClassName('u-now')[thisNum],
-    dom2:document.getElementsByClassName('u-num')[thisNum]
+    dom2:document.getElementsByClassName('u-num')[thisNum],
+    dom3:document.getElementsByClassName('u-cancel')[thisNum]
   }
-  chunksUpload(file, fid, '/disk/upload',unow);
-  // computMD5(file,function(md5,time){
-  //   log(file.name+" MD5:"+md5+"time:"+time);
-  //   log(file.name+" 查询MD5...");
-  //   //TODO
-  //   log(file.name+" 开始分块上传");
-  //
-  // })
+  //chunksUpload(file, fid, '/disk/upload',unow);
+
+  log(file.name+" 查询MD5...");
+  computMD5(file,function(md5,time){
+    log(file.name+" MD5:"+md5+"time:"+time);
+    //TODO
+    log(file.name+" 开始分块上传");
+    chunksUpload(file, md5, '/disk/upload',unow);
+  });
 
 
   // let xhr = new XMLHttpRequest();
@@ -81,20 +86,57 @@ function html5_upload(file) {
   // xhr.send(fd);
 }
 
-function chunksUpload(file, fid, url, dom) {
-  let times = Date.now();
-  let size = file.size,
-    chunks = Math.ceil(size / chunkSize),
-    currentChunk = 0,
-    start = 0,
-    end = 0;
-  console.log(chunks);
+function chunksUpload(file, hash, url, dom) {
+  let size = file.size,//文件大小
+    chunks = Math.ceil(size / chunkSize),//分块数量
+    currentChunk = 0,//当前上传块
+    suffix = file.name.split('.').pop(),//文件后缀
+    abort = false,//发生中断
+    finish = (chunks==1)?1:0,//上传最后一块标记
+    qurry = "",//上传链接
+    start = 0,//当前块开始下标
+    end = 0,//当前块结束下标
+    times = Date.now();//开始时间
+
+  console.log(file,suffix);
+  //查询否可以秒传
+  let ifContinueUpload = callback => {
+    query = `?action=query&hash=${hash}&suffix=${suffix}&finish=${finish}`;
+    let xhr = new XMLHttpRequest();//Ajax模块
+    xhr.addEventListener("load", e => {
+      let text = e.target.responseText;
+      if(text == '0'){
+        log('完全上传');
+        callback&&callback();
+      }else if(text == 'ok'){
+        log('秒传');
+        dom.dom1.style.width = "100%";
+        dom.dom2.innerHTML = "100%";
+      }else if(parseInt(text)>0){
+        log('断点续传');
+        let doneSize = parseInt(text);
+        currentChunk = Math.floor(doneSize/chunkSize);
+        start = doneSize;
+        callback&&callback();
+      }
+    }, false);
+    xhr.addEventListener("error", e => {
+      console.log('error', e);
+      return;
+    }, false);
+    xhr.open("POST", url+query);
+    xhr.send();
+  }
+
+  //分块上传
   let upload = (chunk, callback) => { //分块上传函数
     log(file.name+' 上传分块 '+(currentChunk+1)+"/"+chunks+' ');
-    let xhr = new XMLHttpRequest();
+    query = `?action=upload&hash=${hash}&suffix=${suffix}&finish=${finish}`
+    let xhr = new XMLHttpRequest();//Ajax模块
     //上传进度
     xhr.upload.addEventListener("progress", e => {
       console.log('progress');
+      if(abort) return;
       //更新dom
       let state = parseInt((currentChunk+ e.loaded / e.total)/chunks*10000)/100+'%';
       dom.dom1.style.width = state;
@@ -112,19 +154,38 @@ function chunksUpload(file, fid, url, dom) {
       console.log('error', e);
     }, false);
     xhr.addEventListener("abort", e => {
-      console.log('abort', e);
+      return console.log('abort', e);
     }, false);
 
     let fd = new FormData;
-    fd.append("myfile", chunk, fid);
-    xhr.open("POST", url);
+    fd.append("myfile", chunk, hash);
+    xhr.open("POST", url+query);
     xhr.send(fd);
+    //取消按钮
+    dom.dom3.onclick = function(){
+      if(abort==false){
+        abort = true;
+        dom.dom3.innerHTML = '继续'
+        xhr.abort();
+      }else{
+        abort = false;
+        dom.dom3.innerHTML = '暂停'
+        ifContinueUpload(startUpload);
+      }
+
+      //query = "?action=abort";
+      //xhr.open("POST", url+query);
+
+    }
   }
 
   let startUpload = () => { //分块上传前处理
     if (start >= size) {
       log(file.name+' 上传完毕 '+new Date().toLocaleTimeString()+' 总时长'+(Date.now()-times));
       return; //传送完毕
+    }
+    if(currentChunk==chunks-1){
+      finish = 1;
     }
     //计算下一块末尾
     end = start + chunkSize;
@@ -143,7 +204,8 @@ function chunksUpload(file, fid, url, dom) {
     startUpload();
   }
 
-  startUpload();
+ifContinueUpload(startUpload);
+
 }
 
 

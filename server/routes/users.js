@@ -3,7 +3,8 @@ const router = express.Router();
 const db = require('../model/db.js');
 const sql = require('../model/sql.js');
 const {responseClient,md5,MD5_SUFFIX} = require('../util');
-
+var multipart = require('connect-multiparty');
+var multipartMiddleware = multipart();
 // POST user login
 router.post('/login',(req,res)=>{
   let{userName,password}=req.body;
@@ -36,29 +37,30 @@ router.post('/login',(req,res)=>{
 });
 
 // POST user register
-router.post('/register',(req,res)=>{
-  let{userName,password}=req.body;
-  if(!userName){
+router.post('/register', multipartMiddleware, (req,res)=>{
+  console.log('1111',req.body);
+  let {username,password,phone,email} = req.body;
+  console.log(username,password,phone,email);
+  if(!username){
     responseClient(res,400,2,'用户名不可为空');
-    return;
   }
   if(!password){
     responseClient(res,400,2,'密码不可为空');
   }
-  db.query(sql.getUserInfoByName(userName)).then(data=>{
-    //console.log(data);
+  db.query(sql.getUserInfoByName(username)).then(data=>{
+    console.log("查数据",data);
     if(data){
       responseClient(res,200,1,'用户名已存在');
       return;
     }
     let user = {
-      user_name:userName,
+      user_name:username,
       user_password: md5(password + MD5_SUFFIX),
       level:1
     }
     //console.log(user);
     db.query(sql.insertUser(),user).then(data=>{
-      console.log(data);
+      console.log('注册成功',data);
       responseClient(res, 200, 0, '注册成功', '');
       return;
     }).catch(err=>{
@@ -84,14 +86,14 @@ router.get('/userInfo',function (req,res) {
     }
 });
 
-// // GET user info
-// router.get('/info', function(req, res, next) {
-//   let user_id = 3;
-//   db.query(sql.getUserInfoById(user_id)).then(data=>{
-//     res.send(data);
-//   }).catch(err=>{
-//     console.log(err);
-//   });
-// });
+// GET user info
+router.get('/info', function(req, res, next) {
+  let user_id = 3;
+  db.query(sql.getUserInfoById(user_id)).then(data=>{
+    res.send(data);
+  }).catch(err=>{
+    console.log(err);
+  });
+});
 
 module.exports = router;

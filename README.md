@@ -1,3 +1,24 @@
+## 2019/5/11
+### TODO
+- antd响应式布局怎么写？
+### COMPLETE
+- 状态树
+  clouddisk--navigation--avatar
+          |           |--links
+          |           |--disk used
+          |--tool bar--option
+          |         |--search
+          |         |--file path
+          |--files--folder
+                 |--file
+## 2019/5/10
+### COMPLETE
+- 重学react、flux、reduce
+- react服务端渲染
+- CORS使用跨域获得服务器数据
+- 使用redux-thunk中间件
+### TODO
+- 设计store树
 ## 2019/5/9
 ### COMPLETE
 - 完成文件秒传
@@ -18,7 +39,8 @@
 ### TODO
 - 上传速度显示
 - 数据库写入
-- 开始前端代码编写
+- 开始前端代码编写 done
+- 设计State
 
 ## 2019/5/5 - 2019/5/8
 - 拼多多笔试准备

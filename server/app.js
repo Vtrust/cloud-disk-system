@@ -68,6 +68,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//CORS跨域
+const allowCrossDomain = function (req, res, next) {
+ res.header('Access-Control-Allow-Origin', '*');//自定义中间件，设置跨域需要的响应头。
+ next();
+};
+app.use(allowCrossDomain);
+
 // route
 app.use('/', indexRouter);
 app.use('/disk', diskRouter);

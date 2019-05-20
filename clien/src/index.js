@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {Provider} from 'react-redux'
-import Routes from './Routes';
+import App from './containers';
 import * as serviceWorker from './serviceWorker';
 import store from './Store'
 
 ReactDOM.render(
   <Provider store={store}>
-    <Routes />
+    <App />
   </Provider>,
   document.getElementById('root')
 );

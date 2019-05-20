@@ -158,6 +158,7 @@ function chunksUpload(file, hash, url, dom) {
     }, false);
 
     let fd = new FormData;
+    fd.append("hello", 'hello');
     fd.append("myfile", chunk, hash);
     xhr.open("POST", url+query);
     xhr.send(fd);
@@ -250,8 +251,6 @@ function computMD5(file, callback, progress) {
 
   loadNext();
 }
-
-
 
 //格式化数字输出,将数字转为合适的单位输出,默认按照1024层级转为文件单位输出
 function formatSize(size) {

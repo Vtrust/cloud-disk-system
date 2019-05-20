@@ -9,6 +9,7 @@ const logger = require('morgan');
 const mysql = require('mysql');
 const session = require('express-session');
 const MySQLstore = require('express-mysql-session')(session);
+const cors = require('cors') 
 // const routes = require('./routes')
 
 const indexRouter = require('./routes/index');
@@ -47,8 +48,8 @@ app.use(session({
 }))
 
 app.use(flash());
-app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 // 处理表单及文件上传的中间件
 // app.use(require('express-formidable')({
 //   uploadDir: path.join(__dirname, 'public/img'), // 上传文件目录
@@ -69,11 +70,24 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //CORS跨域
-const allowCrossDomain = function (req, res, next) {
- res.header('Access-Control-Allow-Origin', '*');//自定义中间件，设置跨域需要的响应头。
- next();
-};
-app.use(allowCrossDomain);
+// const allowCrossDomain = function (req, res, next) {
+//  res.header('Access-Control-Allow-Origin', '*');//自定义中间件，设置跨域需要的响应头。
+//  next();
+// };
+// app.use(allowCrossDomain);
+app.use(cors({
+  credentials: true, 
+  // origin: 'http://localhost:3000', // web前端服务器地址
+  origin: '*' // 这样会出错
+}));
+
+//避免304错误
+app.use(function(req, res, next){
+  res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.header("Pragma", "no-cache");
+  res.header("Expires", 0);
+  next();
+});
 
 // route
 app.use('/', indexRouter);

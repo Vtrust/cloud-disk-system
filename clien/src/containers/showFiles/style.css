@@ -1,0 +1,22 @@
+.fileCell{
+  margin-bottom: 2px;
+  padding: 10px;
+  background-color: #fff;
+  cursor: pointer;
+}
+.fileCell:hover{
+  background-color: #ecf0f1;
+}
+
+.folderCell{
+  margin-bottom: 2px;
+  padding: 10px;
+  background-color:#fff;
+  cursor: pointer;
+}
+.folderCell:hover{
+  background-color: #ecf0f1;
+}
+.fliesList{
+  padding-top:20px;
+}

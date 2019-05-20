@@ -23,7 +23,8 @@ const __selsctDelete = (sql) => {
   return new Promise((res,rej)=>{
     pool.getConnection(function (err, conn) {
       if (err) {
-        console.log('CONNECT ERROR:', err.message)
+        console.log('CONNECT ERROR:', err.message);
+        conn.release()
         rej(err);
       } else {
         conn.query(sql, function (err, rows, fields) {
@@ -31,7 +32,7 @@ const __selsctDelete = (sql) => {
           conn.release()
           // 事件驱动回调
           if(err) rej(err);
-          if(rows&&rows.length==0) res(null);
+          //if(rows&&rows.length==0) res(null);
           res(rows);
         })
       }
@@ -64,14 +65,15 @@ const __updateInsert = (sql, params) => {
   return new Promise((res,rej)=>{
     pool.getConnection(function (err, conn) {
       if (err) {
-        console.log('CONNECT ERROR:', err.message)
+        console.log('CONNECT ERROR:', err.message);
+        conn.release()
         rej(err);
       } else {
         conn.query(sql, params, function (err, rows, fields) {
           // 释放连接
           conn.release()
           if(err) rej(err);
-          if(rows&&rows.length==0) res(null);
+          //if(rows&&rows.length==0) res(null);
           res(rows);
         })
       }

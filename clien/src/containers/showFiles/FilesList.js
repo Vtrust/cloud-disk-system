@@ -9,7 +9,7 @@ class FilesList extends Component {
       <div>
         {
           files.map((file) => {
-            if (file.type === 'folder') {
+            if (file.type === 1) {
               return (
                 <Link key={file.file_id} to={`/disk/folder/${file.file_id}`} style={{textDecoration:'none' ,color:'rgba(0, 0, 0, 0.65)'}}>
                   <FileCell  file={file} />

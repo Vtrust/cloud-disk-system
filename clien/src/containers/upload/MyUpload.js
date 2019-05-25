@@ -4,8 +4,21 @@ import { bindActionCreators } from 'redux'
 import { Upload, message, Button } from 'antd';
 import SparkMD5 from "spark-md5";
 import axios from 'axios';
-import {actions} from '../../reducers/uploadFiles'
-const { add_upload_task, update_task, complete_task } = actions;
+import { actions as uploadActions } from '../../reducers/uploadFiles'
+import { actions as fileACtions } from '../../reducers/files';
+
+const instance = axios.create({
+  timeout: 1000,
+});
+
+instance.interceptors.response.use(function(res){
+  //相应拦截器
+  console.log(res);
+  return res.data;
+});
+
+const { get_file_list } = fileACtions;
+const { add_upload_task, update_task, complete_task } = uploadActions;
 
 //计算MD5
 let computMD5 = (file, callback, progress) => {//分片计算文件MD5
@@ -55,30 +68,30 @@ class MyUpload extends Component {
     this.setState({
       beforeUpload: true
     })
-    console.log('beforeUpload');
+    //console.log('beforeUpload');
 
     this.props.add_upload_task(file);
 
     return new Promise((res, rej) => {
       //计算文件MD5
       computMD5(file, (md5, time) => {
-        console.log('md5', md5, time);
+        //console.log('md5', md5, time);
         file.md5 = md5;//给文件添加MD5属性
         res(file);
       }, (num) => {
-        console.log('MD5计算进度', num);
+        //console.log('MD5计算进度', num);
         let progress = Math.floor(num * 100);
         this.props.update_task(file.uid, "准备中" + progress + "%", 0);
       })
-      console.log('beforeUpload2');
+      //console.log('beforeUpload2');
       //return false;
     });
   }
 
   //覆盖antd上传方法
   customRequest = (action) => {
-    console.log('customRequest');
-    console.log(action);
+    //console.log('customRequest');
+    //console.log(action);
     //HTML5分块上传
     this.chuncksUpload(action, 2)
   }
@@ -99,7 +112,7 @@ class MyUpload extends Component {
       suffix = file.name.split('.').pop(),//文件后缀
       url = "/api/disk/upload/v2";//请求链接参数
 
-    console.log('分块上传开始', file.name);
+    //console.log('分块上传开始', file.name);
 
     //选择上传方式 秒传/断点续传/完全上传
     let chooseUploadMethod = (callback) => {
@@ -108,20 +121,21 @@ class MyUpload extends Component {
       formData.append("hash", file.md5);
       formData.append("suffix", suffix);
       formData.append("finish", finish);
-      formData.append("path",this.props.path)
+      formData.append("path", this.props.path);
+      formData.append("file_name", file.name);
 
-      axios.post(url, formData).then((response) => {
-        console.log(response);
+      instance.post(url, formData).then((response) => {
+        //console.log(response);
         if (response && response.code === 0) {
           switch (response.data.uploadType) {
             case "full": {
-              console.log('完全上传');
+              //console.log('完全上传');
               callback && callback();
             }
               break;
             case "continue": {
               //设置上传进度
-              console.log('断点续传');
+              //console.log('断点续传');
               let uploadedSize = response.data.uploadedSize;
               currentChunk = Math.floor(uploadedSize / chunkSize);
               start = uploadedSize;
@@ -129,14 +143,17 @@ class MyUpload extends Component {
             }
               break;
             case "flash": {
-              console.log('闪传');
+              //console.log('闪传');
               //action.onProgress({ percent: 100 }, file);
-              this.props.update_task(file.uid,"上传完成",100);
+              this.props.complete_task(file.uid);
+              this.props.update_task(file.uid, "上传完成", 100);
               action.onSuccess("upload OK", file);
+              let folder_id = this.props.path.split(",").pop();
+              this.props.get_file_list(this.props.user_id, folder_id === '' ? 'root' : folder_id);
             }
               break;
             default:
-              console.log("后台返回参数错误！");
+              //console.log("后台返回参数错误！");
           }
         }
       }).catch(onError);
@@ -144,20 +161,21 @@ class MyUpload extends Component {
 
     //单块上传函数
     let chunkUpload = (chunk, callback) => {
-      console.log(file.name + ' 上传分块 ' + (currentChunk + 1) + "/" + chunkNum + ' ');
+      //console.log(file.name + ' 上传分块 ' + (currentChunk + 1) + "/" + chunkNum + ' ');
       let formData = new FormData;
       formData.append("action", "upload");
       formData.append("hash", file.md5);
       formData.append("suffix", suffix);
       formData.append("finish", finish);
       formData.append("chunk", chunk);
-      if(finish==1){
-        formData.append("path",this.props.path);
+      if (finish == 1) {
+        formData.append("path", this.props.path);
+        formData.append("file_name", file.name);
       }
 
-      axios.post(url, formData, {
+      instance.post(url, formData, {
         onUploadProgress: ({ total, loaded }) => {
-          //console.log(Math.round((currentChunk + loaded / total) / chunkNum * 100).toFixed(2))
+          ////console.log(Math.round((currentChunk + loaded / total) / chunkNum * 100).toFixed(2))
           //action.onProgress({ percent: Math.round((currentChunk + loaded / total) / chunkNum * 100) }, file);
           let percent = Math.round((currentChunk + loaded / total) / chunkNum * 100);
           this.props.update_task(file.uid, "上传中", percent)
@@ -171,10 +189,13 @@ class MyUpload extends Component {
 
     let startUpload = () => {//上传前准备
       if (start >= size) {
-        this.props.update_task(file.uid,"上传完成",100);
-        //this.props.complete_task(file.uid);
+        this.props.update_task(file.uid, "上传完成", 100);
+        this.props.complete_task(file.uid);
         action.onSuccess("upload OK", file);
-        console.log(file.name + ' 上传完毕 ' + new Date().toLocaleTimeString() + ' 总时长' + (Date.now() - times));
+        //console.log(file.name + ' 上传完毕 ' + new Date().toLocaleTimeString() + ' 总时长' + (Date.now() - times));
+        //刷新file list
+        let folder_id = this.props.path.split(",").pop();
+        this.props.get_file_list(this.props.user_id, folder_id === '' ? 'root' : folder_id);
         return;
       }
       if (currentChunk === chunkNum - 1) {
@@ -198,7 +219,7 @@ class MyUpload extends Component {
     }
 
     let onError = (err) => {
-      console.log('onError', err);
+      //console.log('onError', err);
       action.onError('网络错误', action.file);
     }
 
@@ -219,7 +240,7 @@ class MyUpload extends Component {
       showUploadList: false,
       onChange(info) {
         if (info.file.status !== 'uploading') {
-          console.log(info.file, info.fileList);
+          //console.log(info.file, info.fileList);
         }
         if (info.file.status === 'done') {
           message.success(`${info.file.name} 上传成功`);
@@ -239,18 +260,20 @@ class MyUpload extends Component {
   }
 }
 
-function mapStateToProps(state){
-  console.log('upload',state.files.path);
-  
+function mapStateToProps(state) {
+  //console.log('upload', state.files.path);
+
   return {
-    path:state.files.path
+    path: state.files.path,
+    user_id: state.user.userInfo.id,
   };
 }
 function mapDispatchToProps(dispatch) {
   return {
     add_upload_task: bindActionCreators(add_upload_task, dispatch),
     update_task: bindActionCreators(update_task, dispatch),
-    complete_task: bindActionCreators(complete_task, dispatch)
+    complete_task: bindActionCreators(complete_task, dispatch),
+    get_file_list: bindActionCreators(get_file_list, dispatch)
   }
 }
 

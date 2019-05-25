@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Row, Col, Icon, Button, Input, Breadcrumb } from "antd";
+import { Row, Col, Icon, Button, Input, Breadcrumb, Modal } from "antd";
 import { Link } from "react-router-dom";
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -8,7 +8,7 @@ import { actions } from '../../reducers/files';
 import MyUpload from '../upload/MyUpload';
 import UploadList from '../upload/UploadList';
 
-const { select_all_file, unselect_all_file } = actions;
+const { select_all_file, unselect_all_file, create_folder, delete_files } = actions;
 
 const ButtonGroup = Button.Group;
 const Search = Input.Search;
@@ -17,8 +17,11 @@ class Toolbar extends Component {
   constructor(props) {
     super(props);
     this.selectAll = this.selectAll.bind(this);
+    this.deleteFiles = this.deleteFiles.bind(this);
     this.state = {
-      size: 'default'
+      size: 'default',
+      visible: false,
+      newfolder: "",
     }
   }
 
@@ -34,10 +37,55 @@ class Toolbar extends Component {
     }
   }
 
+  showModal = () => {
+    this.setState({
+      visible: true,
+    });
+  };
+
+  handleOk = e => {
+    console.log(e);
+    this.props.create_folder(this.state.newfolder, this.props.path);
+    this.setState({
+      visible: false,
+      newfolder: ""
+    });
+  };
+
+  handleCancel = e => {
+    console.log(e);
+    this.setState({
+      visible: false,
+    });
+  };
+
+  inputNewFolder = e => {
+    console.log(e.target.value);
+    this.setState({
+      newfolder: e.target.value
+    })
+  }
+
+  deleteFiles = e => {
+    let files = [];
+    this.props.files.forEach(element => {
+      if (element.checked === true) {
+        files.push({
+          file_id: element.file_id,
+          type: element.type
+        })
+      }
+    })
+    console.log(files);
+    this.props.delete_files(files);
+    this.props.unselect_all_file();
+
+  }
+
   render() {
     const size = this.state.size;
     const paths = this.props.paths;
-    const checked = this.props.checked;
+    const checkeNum = this.props.checkeNum;
     const select_all = this.props.select_all;
     return (
       <div>
@@ -76,32 +124,32 @@ class Toolbar extends Component {
                 </Button>
               }
 
-              {checked &&
-                <Button type="primary" icon="delete" size={size}>
+              {checkeNum > 0 &&
+                <Button type="primary" icon="delete" size={size} onClick={this.deleteFiles}>
                   删除
                 </Button>
               }
-              {checked &&
+              {checkeNum > 0 &&
                 <Button type="primary" icon="arrow-right" size={size}>
                   移动
                 </Button>
               }
               <MyUpload>
-          
-                  上传文件
-       
-              </MyUpload>
-
-              {/* <Upload style={{display:"inline-block"}}>
-                <Button type="primary" icon="upload" size={size}>
                 上传文件
-                </Button>
-                </Upload> */}
-
-
-              <Button type="primary" icon="folder-add" size={size}>
+              </MyUpload>
+              <Button type="primary" icon="folder-add" size={size} onClick={this.showModal}>
                 创建文件夹
-            </Button>
+              </Button>
+              <Modal
+                title="创建文件夹"
+                visible={this.state.visible}
+                onOk={this.handleOk}
+                onCancel={this.handleCancel}
+                okText="确认"
+                cancelText="取消"
+              >
+                <Input placeholder="输入名称" value={this.state.newfolder} onChange={this.inputNewFolder} />
+              </Modal>
             </ButtonGroup>
           </Col>
           <Col span={8}>
@@ -123,15 +171,19 @@ function mapStateToProps(state) {
   }
   if (state.files.list.length == 0) select_all = false;
   return {
+    path: state.files.path,
     paths: state.files.paths,
-    checked: state.files.checked,
+    checkeNum: state.files.checkeNum,
     select_all: select_all,
+    files: state.files.list
   }
 }
 function mapDispatchToProps(dispatch) {
   return {
     select_all_file: bindActionCreators(select_all_file, dispatch),
-    unselect_all_file: bindActionCreators(unselect_all_file, dispatch)
+    unselect_all_file: bindActionCreators(unselect_all_file, dispatch),
+    create_folder: bindActionCreators(create_folder, dispatch),
+    delete_files: bindActionCreators(delete_files, dispatch)
   }
 }
 export default connect(mapStateToProps, mapDispatchToProps)(Toolbar);

@@ -3,27 +3,27 @@ import { connect } from 'react-redux';
 import { Row, Col, Checkbox, Icon, Input, Tooltip } from "antd";
 import { bindActionCreators } from 'redux';
 import { actions } from '../../reducers/files';
-import {formatSize} from '../../util/files';
-const { select_file } = actions;
+import { formatSize,linkDownload } from '../../util/files';
+const { select_file, delete_files } = actions;
 
-const OptionFile = (file, edit) => {
+const OptionFile = (file, edit, deleteFile) => {
   return (
     <Row>
       <Col span={4} offset={16}>
         <Tooltip title="重命名">
-          <Icon type="edit" onClick={edit} />
+          <Icon type="edit" onClick={edit}  className={"fileCellOptionBtn"}/>
         </Tooltip>
       </Col>
       <Col span={4}>
         <Tooltip title="删除">
-          <Icon type="delete" />
+          <Icon type="delete" onClick={deleteFile}  className={"fileCellOptionBtn"}/>
         </Tooltip>
       </Col>
     </Row>
   );
 }
 
-const OptionFolder = (file, edit) => {
+const OptionFolder = (file, edit, deleteFile,downloadFile) => {
   return (
     <Row>
       <Col span={4}>
@@ -34,27 +34,27 @@ const OptionFolder = (file, edit) => {
       </Col>
       <Col span={4}>
         <Tooltip title="文件信息">
-          <Icon type="info-circle" />
+          <Icon type="info-circle" className={"fileCellOptionBtn"} />
         </Tooltip>
       </Col>
       <Col span={4}>
         <Tooltip title="重命名">
-          <Icon type="edit" onClick={edit} />
+          <Icon type="edit" onClick={edit} className={"fileCellOptionBtn"} />
         </Tooltip>
       </Col>
       <Col span={4}>
         <Tooltip title="复制链接">
-          <Icon type="link" />
+          <Icon type="link" className={"fileCellOptionBtn"} />
         </Tooltip>
       </Col>
       <Col span={4}>
         <Tooltip title="下载">
-          <Icon type="download" />
+          <Icon type="download" onClick={downloadFile} className={"fileCellOptionBtn"} />
         </Tooltip>
       </Col>
       <Col span={4}>
-        <Tooltip title="删除">
-          <Icon type="delete" />
+        <Tooltip title="删除" >
+          <Icon type="delete" onClick={deleteFile} className={"fileCellOptionBtn"} />
         </Tooltip>
       </Col>
     </Row>
@@ -66,8 +66,10 @@ class FIleCell extends Component {
     super(props);
     this.onEdit = this.onEdit.bind(this);
     this.onCheck = this.onCheck.bind(this);
+    this.deleteFile = this.deleteFile.bind(this);
     this.state = {
       edit: this.props.edit,
+      file_name: this.props.file.file_name
     }
   }
 
@@ -75,20 +77,45 @@ class FIleCell extends Component {
     //e.preventDefault();
     e.stopPropagation();
     console.log('checked = ', e.target.checked);
-    this.props.select_file(this.props.file.file_id,e.target.checked);
+    this.props.select_file(this.props.file.file_id, e.target.checked);
   };
 
   onEdit = e => {
     e.preventDefault();
     this.setState({
-      edit:!this.state.edit
+      edit: !this.state.edit
     })
   };
+
+  deleteFile = e => {
+    e.preventDefault();
+    let list = [];
+    let file = {
+      file_id: this.props.file.file_id,
+      type: this.props.file.type
+    }
+    list.push(file);
+    console.log(list);
+
+    this.props.delete_files(list);
+  }
+
+  downloadFile = e =>{
+    e.preventDefault();
+    linkDownload(this.props.file.file_id)
+  }
+
+  inputFileName = e => {
+    e.preventDefault();
+    this.setState({
+      file_name: e.target.value
+    })
+  }
 
   render() {
     const file = this.props.file;
     return (
-      <Row className={file.type === 'folder' ? 'folderCell' : 'fileCell'} type="flex" justify="space-around" align="middle">
+      <Row className={file.type === 1 ? 'folderCell' : 'fileCell'} type="flex" justify="space-around" align="middle">
         <Col span={1} className={"checkBox"}>
           <Checkbox
             checked={file.checked}
@@ -97,38 +124,39 @@ class FIleCell extends Component {
           </Checkbox>
         </Col>
         <Col span={1}>
-          <Icon type={file.type} style={{ fontSize: '28px' }} />
+          <Icon type={file.suffix} style={{ fontSize: '28px' }} />
         </Col>
         <Col span={11}>
           {this.state.edit ?
-            <Input value={file.file_name} /> :
-            file.file_name
+            <Input value={this.state.file_name} onChange={this.inputFileName} /> :
+            this.state.file_name
           }</Col>
-        <Col span={4} offset={1}>
-          {file.type === 'folder' ?
-            OptionFile(file, this.onEdit) :
-            OptionFolder(file, this.onEdit)
+        <Col span={4} offset={1} className="fileCellOption">
+          {file.type === 1 ?
+            OptionFile(file, this.onEdit, this.deleteFile) :
+            OptionFolder(file, this.onEdit, this.deleteFile,this.downloadFile)
           }
         </Col>
-        <Col span={2} offset={1}>{file.size==='-'?'-':formatSize(file.size)}</Col>
+        <Col span={2} offset={1}>{file.size === '-' ? '-' : formatSize(file.size)}</Col>
         <Col span={3}>{file.update}</Col>
       </Row >
     );
   }
 }
 
-FIleCell.defaultProps = {    
-  edit:false
+FIleCell.defaultProps = {
+  edit: false
 };
 
 function mapStateToProps(state) {
   return {}
 }
 
-function mapDispatchToProps(dispatch){
+function mapDispatchToProps(dispatch) {
   return {
-    select_file: bindActionCreators(select_file, dispatch)
+    select_file: bindActionCreators(select_file, dispatch),
+    delete_files: bindActionCreators(delete_files, dispatch)
   }
 }
 
-export default connect(mapStateToProps,mapDispatchToProps)(FIleCell);
+export default connect(mapStateToProps, mapDispatchToProps)(FIleCell);

@@ -9,7 +9,6 @@ let config = {
             for (let it in data) {
                 ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
             }
-            console.log('transformRequest',ret);
             
             return ret
         }
@@ -25,18 +24,21 @@ let config = {
     timeout: 10000,
     responseType: 'json'
 };
-
+const instance = axios.create(config);
 //axios.defaults.withCredentials=true;//解决登陆session每次都不一样
-axios.interceptors.response.use(function(res){
+instance.interceptors.response.use(function(res){
     //相应拦截器
+    console.log(res);
+    
     return res.data;
 });
 
 
 export function get(url) {
-    return axios.get(url, config)
+    
+    return instance.get(url)
 }
 
 export function post(url, data) {
-    return axios.post(url, data, config)
+    return instance.post(url, data)
 }

@@ -11,5 +11,10 @@ block content
         a#upload-target.x-button 选择文件并上传
         #upload-view
         #log
+        a(href="http://localhost:3001/disk/download")
+          p 下载
+  
+        iframe(src="http://localhost:3001/disk/download", frameborder="1",width="500px",height="500px")
+        
   script(src='/javascripts/spark-md5.js')
   script(src='/javascripts/index.js')

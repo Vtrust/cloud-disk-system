@@ -20,3 +20,22 @@
 .fliesList{
   padding-top:20px;
 }
+
+.fileCellOption{
+  visibility:hidden;
+  transition: 0s;
+}
+
+.fileCell:hover .fileCellOption{
+  visibility:visible
+}
+
+.folderCell:hover .fileCellOption{
+  visibility:visible
+}
+.fileCellOptionBtn{
+  transition:font-size 0.3s;
+}
+.fileCellOptionBtn:hover{
+  font-size: 20px;
+}

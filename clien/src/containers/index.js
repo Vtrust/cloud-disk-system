@@ -9,11 +9,13 @@ import Navigation from './navigation/Navigation';
 import Register from './register/Register';
 import Login from './login/Login';
 import ShowFiles from './showFiles/ShowFiles';
+import ShowShareFile from './showShareFiles/ShowShareFiles';
 import Home from './home/Home';
+import ShareDetail from "./shareDetail/ShareDetail";
 
 const { user_auth } = actions;
 
-const { Header, Content, Footer } = Layout;
+const { Content } = Layout;
 
 class App extends Component {
   componentDidMount() {
@@ -26,14 +28,15 @@ class App extends Component {
         <Layout>
           <Navigation />
           <Layout style={{ marginLeft: 200, minHeight: '100vh' }}>
-            <Header style={{ backgroundColor: "#fff" }}>我的云盘</Header>
-            <Content style={{ padding: '10px 20px' }}>
+            <Content>
               <Switch>
-                <Route path="/" exact component={Home} />
+                {/* <Route path="/" exact component={Home} /> */}
                 <Route path="/register" component={Register} />
                 <Route path="/login" component={Login} />
                 <Route path="/disk" component={ShowFiles} />
-                <Redirect to="/" />
+                <Route path="/share" component={ShowShareFile} />
+                <Route path="/s/:share_id" component={ShareDetail} />
+                <Redirect to="/login" />
               </Switch>
             </Content>
           </Layout>

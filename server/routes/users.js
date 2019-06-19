@@ -6,14 +6,6 @@ const moment = require('moment');
 const { responseClient, md5, MD5_SUFFIX } = require('../util');
 
 
-router.post('/login', (req, res) => {
-  let { username, password } = req.body;
-
-  req.session.userInfo = userInfo;//登录成功后设置session
-
-  responseClient(res, 200, 0, '登录成功', resdata);
-});
-
 // POST user login
 router.post('/login', (req, res) => {
   let { username, password } = req.body;
@@ -34,10 +26,12 @@ router.post('/login', (req, res) => {
     //登陆成功
     let resdata = {
       id: data[0].user_id,
-      username: data[0].user_name,
+      username: data[0].username,
       level: data[0].level
     };
 
+    console.log('resdata',resdata);
+    
     //登录成功后设置session
     req.session.userInfo = resdata;
 
@@ -105,6 +99,8 @@ router.post('/register', (req, res) => {
 
 // GET user logout
 router.get('/logout', function (req, res) {
+  console.log('/logout');
+  
   req.session.destroy();
   responseClient(res, 200, 0, "登出成功", {});
 });

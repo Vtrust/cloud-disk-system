@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Row, Col, Button, Icon, Progress } from 'antd';
+import { Row, Col, Progress } from 'antd';
 import {formatSize} from '../../util/files';
 
 class TaskCell extends Component {

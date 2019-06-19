@@ -2,17 +2,17 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router-dom'
 import FolderFiles from './FolderFiles'
+import TypeFiles from './TypeFiles';
 
 class ShowFiles extends Component {
   render() {
     if (this.props.userInfo && this.props.userInfo.level) {
       const { path } = this.props.match;
       return (
-        <div>
+        <div style={{padding:"10px 20px"}}>
           <Switch>
-            <Route path={`${path}/star`} />
             <Route path={`${path}/folder/:folderId`} component={FolderFiles} />
-            <Route path={`${path}/fileType/:fileType`} />
+            <Route path={`${path}/fileType/:fileType`} component={TypeFiles}/>
             <Redirect to={`${path}/folder/root`} />
           </Switch>
         </div>

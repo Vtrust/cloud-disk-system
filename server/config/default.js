@@ -5,7 +5,7 @@ module.exports = {
   session:{
     secret:'cloud_disk',
     key:'cloud_disk',
-    maxAge:2592000000
+    maxAge:3600000
   },
   //数据库设置
   dbHost:'localhost',

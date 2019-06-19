@@ -28,7 +28,7 @@ const instance = axios.create(config);
 //axios.defaults.withCredentials=true;//解决登陆session每次都不一样
 instance.interceptors.response.use(function(res){
     //相应拦截器
-    console.log(res);
+    //console.log(res);
     
     return res.data;
 });
